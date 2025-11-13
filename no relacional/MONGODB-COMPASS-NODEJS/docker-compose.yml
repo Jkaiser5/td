@@ -1,0 +1,55 @@
+services:
+  mongo-server:
+    image: mongo:latest
+    container_name: mongo-server
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db 
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=123456
+    networks: 
+      - mongodb_network
+
+  # --- CLIENTE VISUAL 
+  mongo-client: 
+    image: mongo-express:latest
+    container_name: mongo-client
+    restart: always
+    depends_on:
+      - mongo-server 
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo-server
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_AUTH_USERNAME=admin
+      - ME_CONFIG_MONGODB_AUTH_PASSWORD=123456
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+    ports:
+      - "8081:8081"
+    networks: 
+      - mongodb_network
+      
+  mi-proyecto-node:
+    container_name: app-node
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://admin:123456@mongo-server:27017/mi_base_datos?authSource=admin
+    depends_on:
+      - mongo-server
+    networks:
+      - mongodb_network
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data: 
+
+networks:
+  mongodb_network:
